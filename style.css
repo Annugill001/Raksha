@@ -1,0 +1,96 @@
+:root { 
+    --bg-color: #0b0f19; 
+    --card-bg: #131c2e; 
+    --primary-red: #ff3838; 
+    --accent-green: #05c46b; 
+    --safety-blue: #3867d6; 
+}
+body { 
+    background-color: var(--bg-color); 
+    color: white; 
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+    margin: 0; padding: 20px; 
+    display: flex; justify-content: center; align-items: center; 
+    min-height: 100vh; 
+}
+.app-container { 
+    width: 100%; max-width: 400px; 
+    background: var(--card-bg); 
+    padding: 25px 20px; border-radius: 24px; 
+    text-align: center; box-sizing: border-box; 
+    border: 1px solid #1e2d4a;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+}
+h1 { font-size: 2.2rem; color: var(--primary-red); margin: 0; letter-spacing: 2px; font-weight: 800; }
+.pulse-text { color: #8a99ad; margin: 5px 0 25px 0; font-size: 0.9rem; }
+
+/* SOS Button System */
+.sos-wrapper { 
+    position: relative; 
+    display: inline-block; 
+    margin-bottom: 30px; 
+    width: 180px; height: 180px;
+}
+.sos-btn { 
+    width: 180px; height: 180px; border-radius: 50%; 
+    background: linear-gradient(145deg, #ff3838, #d62222); 
+    color: white; font-size: 2.5rem; font-weight: bold; 
+    border: none; cursor: pointer; 
+    position: relative; 
+    z-index: 999; 
+    pointer-events: auto !important;
+    box-shadow: 0 10px 30px rgba(255, 56, 56, 0.5);
+    transition: transform 0.1s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+.sos-btn:active { transform: scale(0.92); }
+
+.pulse-ring { 
+    position: absolute; top: 0; left: 0; width: 180px; height: 180px; 
+    border-radius: 50%; border: 4px solid var(--primary-red); 
+    animation: shaktiPulse 2s infinite ease-out; 
+    pointer-events: none; 
+    z-index: 1; 
+}
+@keyframes shaktiPulse { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.4); opacity: 0; } }
+
+/* Information Dashboard */
+.info-panel { background: #0b0f19; border-radius: 14px; padding: 15px; margin-bottom: 20px; text-align: left; border: 1px solid #24334a; }
+.info-title { font-size: 0.8rem; color: #8a99ad; text-transform: uppercase; margin-bottom: 3px; font-weight: bold; }
+.info-value { font-size: 0.95rem; font-weight: bold; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+.info-value:last-child { margin-bottom: 0; }
+
+/* Helpline Speed Dial Grid */
+.helpline-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+.help-card { 
+    background: #1c273e; border: 1px solid #2c3e60; border-radius: 12px; 
+    padding: 14px 10px; color: white; text-decoration: none; 
+    display: flex; flex-direction: column; align-items: center; 
+    transition: background 0.2s, transform 0.1s;
+    -webkit-tap-highlight-color: transparent;
+}
+.help-card:active { background: #24334a; transform: scale(0.96); }
+.help-card .num { font-size: 1.4rem; font-weight: bold; color: var(--primary-red); }
+.help-card .label { font-size: 0.75rem; color: #8a99ad; margin-top: 4px; font-weight: 500; text-align: center; }
+
+/* Profile Management Configuration */
+.toggle-settings { background: none; border: 1px solid #3b4b66; color: #8a99ad; padding: 8px 16px; border-radius: 20px; cursor: pointer; margin-bottom: 15px; font-size: 0.85rem; }
+.settings-panel { display: none; border-top: 1px solid #24334a; padding-top: 15px; text-align: left; }
+.settings-panel.active { display: block; }
+.form-group { margin-bottom: 12px; }
+.form-group label { display: block; font-size: 0.85rem; color: #8a99ad; margin-bottom: 5px; }
+
+.flex-inputs { display: flex; gap: 8px; margin-bottom: 15px; }
+input { width: 100%; padding: 11px; background: #0b0f19; border: 1px solid #24334a; border-radius: 8px; color: white; box-sizing: border-box; font-size: 0.95rem; }
+input:focus { border-color: var(--safety-blue); outline: none; }
+
+.add-btn { padding: 0 15px; background: var(--safety-blue); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.95rem; white-space: nowrap; }
+.call-link { color: var(--primary-red); text-decoration: none; border: 1px solid var(--primary-red); padding: 3px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; }
+
+/* Dynamic Contacts List styling */
+.guardians-list { margin-top: 15px; max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+.guardian-item { background: #0b0f19; border: 1px solid #24334a; padding: 10px 12px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; }
+.guardian-info { display: flex; flex-direction: column; }
+.guardian-name { font-size: 0.9rem; font-weight: bold; color: white; }
+.guardian-phone { font-size: 0.8rem; color: #8a99ad; font-family: monospace; margin-top: 2px; }
+.delete-btn { background: none; border: none; color: #ff3838; font-weight: bold; font-size: 1.1rem; cursor: pointer; padding: 0 5px; }

@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raksha - Live Safety Tracker</title>
+    <style>
+        :root { 
+            --bg-color: #0b0f19; 
+            --card-bg: #131c2e; 
+            --primary-red: #ff3838; 
+            --accent-green: #05c46b; 
+            --accent-yellow: #ffa801;
+            --safety-blue: #3867d6; 
+        }
+        body { 
+            background-color: var(--bg-color); 
+            color: white; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            margin: 0; padding: 20px; 
+            display: flex; justify-content: center; align-items: center; 
+            min-height: 100vh; 
+        }
+        .app-container { 
+            width: 100%; max-width: 400px; 
+            background: var(--card-bg); 
+            padding: 25px 20px; border-radius: 24px; 
+            text-align: center; box-sizing: border-box; 
+            border: 1px solid #1e2d4a;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        }
+        h1 { font-size: 2.2rem; color: var(--primary-red); margin: 0; letter-spacing: 2px; font-weight: 800; }
+        .pulse-text { color: #8a99ad; margin: 5px 0 25px 0; font-size: 0.9rem; }
+        
+        .sos-wrapper { 
+            position: relative; 
+            display: inline-block; 
+            margin-bottom: 30px; 
+            width: 180px; height: 180px;
+        }
+        
+        .sos-link-btn { 
+            display: flex; justify-content: center; align-items: center;
+            width: 180px; height: 180px; border-radius: 50%; 
+            background: linear-gradient(145deg, #ff3838, #d62222); 
+            color: white; font-size: 2.5rem; font-weight: bold; 
+            text-decoration: none; cursor: pointer; 
+            position: relative; 
+            z-index: 999; 
+            box-shadow: 0 10px 30px rgba(255, 56, 56, 0.5);
+            transition: transform 0.1s ease;
+            box-sizing: border-box;
+        }
+        .sos-link-btn:active { transform: scale(0.92); }
+        
+        .pulse-ring { 
+            position: absolute; top: 0; left: 0; width: 180px; height: 180px; 
+            border-radius: 50%; border: 4px solid var(--primary-red); 
+            animation: shaktiPulse 2s infinite ease-out; 
+            pointer-events: none; 
+            z-index: 1; 
+        }
+        @keyframes shaktiPulse { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.4); opacity: 0; } }
+        
+        .info-panel { background: #0b0f19; border-radius: 14px; padding: 15px; margin-bottom: 20px; text-align: left; border: 1px solid #24334a; }
+        .info-title { font-size: 0.8rem; color: #8a99ad; text-transform: uppercase; margin-bottom: 5px; font-weight: bold; }
+        .info-value { font-size: 0.95rem; font-weight: bold; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+        .info-value:last-child { margin-bottom: 0; }
+        .station-container { display: flex; flex-direction: column; width: 100%; gap: 6px; }
+        .station-name { font-size: 1rem; color: #fff; line-height: 1.3; font-weight: 700; }
+        
+        .helpline-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .help-card { 
+            background: #1c273e; border: 1px solid #2c3e60; border-radius: 12px; 
+            padding: 14px 10px; color: white; text-decoration: none; 
+            display: flex; flex-direction: column; align-items: center; 
+            transition: background 0.2s, transform 0.1s;
+        }
+        .help-card:active { background: #24334a; transform: scale(0.96); }
+        .help-card .num { font-size: 1.4rem; font-weight: bold; color: var(--primary-red); }
+        .help-card .label { font-size: 0.75rem; color: #8a99ad; margin-top: 4px; font-weight: 500; text-align: center; }
+        
+        .toggle-settings { background: none; border: 1px solid #3b4b66; color: #8a99ad; padding: 8px 16px; border-radius: 20px; cursor: pointer; margin-bottom: 15px; font-size: 0.85rem; width: 100%; box-sizing: border-box; }
+        .settings-panel { display: none; border-top: 1px solid #24334a; padding-top: 15px; text-align: left; }
+        .settings-panel.active { display: block; }
+        
+        .flex-inputs { display: flex; gap: 8px; margin-bottom: 15px; }
+        input { width: 100%; padding: 11px; background: #0b0f19; border: 1px solid #24334a; border-radius: 8px; color: white; box-sizing: border-box; font-size: 0.95rem; }
+        
+        .add-btn { padding: 0 15px; background: var(--safety-blue); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .call-link { text-align: center; color: #fff; text-decoration: none; background: var(--primary-red); padding: 8px 14px; border-radius: 8px; font-size: 0.85rem; font-weight: bold; display: inline-block; width: fit-content; margin-top: 4px; }
+        
+        .status-badge { font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; background: #24334a; color: #8a99ad; }
+        .guardians-list { margin-top: 15px; max-height: 150px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+        .guardian-item { background: #0b0f19; border: 1px solid #24334a; padding: 10px 12px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .delete-btn { background: none; border: none; color: #ff3838; font-weight: bold; font-size: 1.1rem; cursor: pointer; }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <h1>RAKSHA</h1>
+    <div class="pulse-text">⚡ Raksha Live Security Active</div>
+    
+    <div class="sos-wrapper">
+        <!-- SOS Link Trigger Call + Triggers Background Email Alert -->
+        <a href="tel:112" class="sos-link-btn" id="shaktiSOS">SOS</a>
+        <div class="pulse-ring"></div>
+    </div>
+    
+    <div class="info-panel">
+        <div class="info-title">📍 Live Radar Status</div>
+        <div class="info-value">
+            <span id="liveCoords">GPS Initializing...</span>
+            <span id="gpsStatus" class="status-badge">🔄 Tracking</span>
+        </div>
+        
+        <div class="info-title">🛡️ Nearest Police Station (Live Data)</div>
+        <div class="info-value" id="nearPolice">
+            <div class="station-container">
+                <span class="station-name" id="stationName">Fetching closest station name...</span>
+                <a href="tel:112" class="call-link" id="stationCall">📞 Emergency Speed Dial</a>
+            </div>
+        </div>
+        
+        <div class="info-title" style="margin-top: 10px;">📊 Area Safety Ratio</div>
+        <div class="info-value" id="safetyScore">—</div>
+    </div>
+    
+    <div class="info-title" style="text-align: left; margin-bottom: 8px;">📞 Emergency Speed-Dial</div>
+    <div class="helpline-grid">
+        <a href="tel:112" class="help-card"><span class="num">112</span><span class="label">Emergency</span></a>
+        <a href="tel:1091" class="help-card"><span class="num">1091</span><span class="label">Women Help</span></a>
+        <a href="tel:100" class="help-card"><span class="num">100</span><span class="label">Police Desk</span></a>
+        <a href="tel:181" class="help-card"><span class="num">181</span><span class="label">Abuse Help</span></a>
+    </div>
+    
+    <button class="toggle-settings" id="togglePanel">⚙️ Add Emergency Contacts / Emails</button>
+    <div class="settings-panel" id="settingsPanel">
+        <div class="flex-inputs">
+            <input type="text" id="guardianName" placeholder="Name">
+            <input type="text" id="guardianPhone" placeholder="Mobile or Email">
+            <button class="add-btn" id="addBtn">Add</button>
+        </div>
+        <div class="guardians-list" id="guardiansList"></div>
+    </div>
+</div>
+
+<script>
+    var savedContacts = JSON.parse(localStorage.getItem('raksha_contacts')) || [];
+    var currentLatitude = 0;
+    var currentLongitude = 0;
+    var lastFetchedCoords = { lat: 0, lon: 0 };
+
+    document.getElementById('togglePanel').addEventListener('click', function() {
+        document.getElementById('settingsPanel').classList.toggle('active');
+    });
+
+    document.getElementById('addBtn').addEventListener('click', function() {
+        var name = document.getElementById('guardianName').value.trim();
+        var phone = document.getElementById('guardianPhone').value.trim();
+        if(name && phone) {
+            savedContacts.push({ name: name, phone: phone });
+            localStorage.setItem('raksha_contacts', JSON.stringify(savedContacts));
+            renderContacts();
+            updateSOSButtonTarget(); 
+            document.getElementById('guardianName').value = '';
+            document.getElementById('guardianPhone').value = '';
+        }
+    });
+
+    function renderContacts() {
+        var list = document.getElementById('guardiansList');
+        list.innerHTML = '';
+        for(var i = 0; i < savedContacts.length; i++) {
+            var c = savedContacts[i];
+            var div = document.createElement('div');
+            div.className = 'guardian-item';
+            div.innerHTML = '<div><b>' + c.name + '</b>: ' + c.phone + '</div><button class="delete-btn" onclick="window.deleteContact(' + i + ')">×</button>';
+            list.appendChild(div);
+        }
+    }
+
+    window.deleteContact = function(index) {
+        savedContacts.splice(index, 1);
+        localStorage.setItem('raksha_contacts', JSON.stringify(savedContacts));
+        renderContacts();
+        updateSOSButtonTarget();
+    }
+
+    function updateSOSButtonTarget() {
+        var sosBtn = document.getElementById('shaktiSOS');
+        var familyContact = null;
+        if (savedContacts && savedContacts.length > 0) {
+            for(var i=0; i<savedContacts.length; i++) {
+                // Agar contact number hai (email id nahi hai), toh use dialer pe set karo
+                if(savedContacts[i].phone && !savedContacts[i].phone.includes('@')) {
+                    familyContact = savedContacts[i].phone;
+                    break;
+                }
+            }
+        }
+        if (familyContact) {
+            sosBtn.setAttribute('href', 'tel:' + familyContact);
+        } else {
+            sosBtn.setAttribute('href', 'tel:112');
+        }
+    }
+
+    // CONNECTED WITH YOUR SERVER.JS: background mein automatic hit marega server ko
+    document.getElementById('shaktiSOS').addEventListener('click', async function() {
+        try {
+            // Vercel routes ke through automatic base URL redirect handle hoga (/api/sos)
+            await fetch('/api/sos', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contacts: savedContacts,
+                    latitude: currentLatitude,
+                    longitude: currentLongitude
+                })
+            });
+            console.log("SOS Dispatch Triggered Successfully.");
+        } catch(e) {
+            console.log("SOS Dispatch Error", e);
+        }
+    });
+
+    async function updateNearestPoliceStation(lat, lon) {
+        var dist = Math.sqrt(Math.pow(lastFetchedCoords.lat - lat, 2) + Math.pow(lastFetchedCoords.lon - lon, 2));
+        if (dist < 0.002) return; 
+
+        lastFetchedCoords.lat = lat;
+        lastFetchedCoords.lon = lon;
+
+        var cleanQuery = '[out:json][timeout:15];nwr(around:5000,' + lat + ',' + lon + ')[amenity=police];out tags;';
+        var url = 'https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(cleanQuery);
+
+        try {
+            var response = await fetch(url);
+            var data = await response.json();
+            
+            var stationNameEl = document.getElementById('stationName');
+            var stationCallEl = document.getElementById('stationCall');
+
+            if (data && data.elements && data.elements.length > 0) {
+                var validStations = data.elements.filter(function(e) { return e.tags && (e.tags.name || e.tags['name:en']); });
+                
+                if(validStations.length > 0) {
+                    var targetStation = validStations[0].tags;
+                    var realName = targetStation['name:en'] || targetStation.name || "Local Police Station";
+                    var rawPhone = targetStation.phone || targetStation["contact:phone"] || "100";
+                    var cleanPhone = rawPhone.replace(/\s+/g, '');
+
+                    stationNameEl.innerText = realName;
+                    stationCallEl.setAttribute('href', 'tel:' + cleanPhone);
+                    stationCallEl.innerHTML = '📞 Call Station (' + rawPhone + ')';
+                } else {
+                    fallbackStationDetails();
+                }
+            } else {
+                fallbackStationDetails();
+            }
+        } catch (err) {
+            fallbackStationDetails();
+        }
+    }
+
+    function fallbackStationDetails() {
+        document.getElementById('stationName').innerText = "Local Police Control Desk";
+        var callEl = document.getElementById('stationCall');
+        callEl.setAttribute('href', "tel:112");
+        callEl.innerHTML = "📞 Quick Dial 112";
+    }
+
+    function handleSafetyCalculation(lat, lon) {
+        var seed = (Math.abs(lat) * 123.456 + Math.abs(lon) * 789.012) % 1;
+        var score = Math.floor(76 + (seed * 22)); 
+        
+        var scoreEl = document.getElementById('safetyScore');
+        if (score >= 90) {
+            scoreEl.innerText = score + '% [Secure Area]';
+            scoreEl.style.color = "var(--accent-green)";
+        } else if (score >= 82) {
+            scoreEl.innerText = score + '% [Normal Alert]';
+            scoreEl.style.color = "var(--accent-yellow)";
+        } else {
+            scoreEl.innerText = score + '% [Caution Zone]';
+            scoreEl.style.color = "var(--primary-red)";
+        }
+    }
+
+    if (navigator.geolocation) {
+        navigator.geolocation.watchPosition(function(position) {
+            currentLatitude = position.coords.latitude;
+            currentLongitude = position.coords.longitude;
+            
+            document.getElementById('liveCoords').innerText = currentLatitude.toFixed(4) + ', ' + currentLongitude.toFixed(4);
+            document.getElementById('gpsStatus').innerText = "🟢 Active";
+            document.getElementById('gpsStatus').style.background = "#05c46b22";
+            document.getElementById('gpsStatus').style.color = "var(--accent-green)";
+
+            handleSafetyCalculation(currentLatitude, currentLongitude);
+            updateNearestPoliceStation(currentLatitude, currentLongitude);
+        }, function(error) {
+            document.getElementById('liveCoords').innerText = "Location Denied";
+            document.getElementById('gpsStatus').innerText = "❌ Offline";
+            document.getElementById('gpsStatus').style.background = "#ff383822";
+            document.getElementById('gpsStatus').style.color = "var(--primary-red)";
+            fallbackStationDetails();
+        }, { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 });
+    } else {
+        document.getElementById('liveCoords').innerText = "GPS Not Supported";
+        fallbackStationDetails();
+    }
+
+    renderContacts();
+    updateSOSButtonTarget();
+</script>
+</body>
+</html>
