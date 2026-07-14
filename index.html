@@ -102,7 +102,6 @@
     <div class="pulse-text">⚡ Raksha Live Security Active</div>
     
     <div class="sos-wrapper">
-        <!-- SOS Link Trigger Call + Triggers Background Email Alert -->
         <a href="tel:112" class="sos-link-btn" id="shaktiSOS">SOS</a>
         <div class="pulse-ring"></div>
     </div>
@@ -114,10 +113,10 @@
             <span id="gpsStatus" class="status-badge">🔄 Tracking</span>
         </div>
         
-        <div class="info-title">🛡️ Nearest Police Station (Live Data)</div>
+        <div class="info-title">🛡️ Nearest Police Station / Area Chowk</div>
         <div class="info-value" id="nearPolice">
             <div class="station-container">
-                <span class="station-name" id="stationName">Fetching closest station name...</span>
+                <span class="station-name" id="stationName">Fetching closest location...</span>
                 <a href="tel:112" class="call-link" id="stationCall">📞 Emergency Speed Dial</a>
             </div>
         </div>
@@ -192,7 +191,6 @@
         var familyContact = null;
         if (savedContacts && savedContacts.length > 0) {
             for(var i=0; i<savedContacts.length; i++) {
-                // Agar contact number hai (email id nahi hai), toh use dialer pe set karo
                 if(savedContacts[i].phone && !savedContacts[i].phone.includes('@')) {
                     familyContact = savedContacts[i].phone;
                     break;
@@ -206,10 +204,8 @@
         }
     }
 
-    // CONNECTED WITH YOUR SERVER.JS: background mein automatic hit marega server ko
     document.getElementById('shaktiSOS').addEventListener('click', async function() {
         try {
-            // Vercel routes ke through automatic base URL redirect handle hoga (/api/sos)
             await fetch('/api/sos', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -225,48 +221,74 @@
         }
     });
 
+    // ADVANCED GEOLOCATION RADAR ENGINE (Extracts Exact Thana/Chowk/Road)
     async function updateNearestPoliceStation(lat, lon) {
+        if (!lat || !lon) return;
+        
         var dist = Math.sqrt(Math.pow(lastFetchedCoords.lat - lat, 2) + Math.pow(lastFetchedCoords.lon - lon, 2));
-        if (dist < 0.002) return; 
+        if (dist < 0.0008 && document.getElementById('stationName').innerText !== "Fetching closest location...") return; 
 
         lastFetchedCoords.lat = lat;
         lastFetchedCoords.lon = lon;
 
-        var cleanQuery = '[out:json][timeout:15];nwr(around:5000,' + lat + ',' + lon + ')[amenity=police];out tags;';
+        document.getElementById('stationName').innerText = "🔍 Locating nearest Thana/Chowk...";
+
+        var cleanQuery = '[out:json][timeout:25];(nwr(around:5000,' + lat + ',' + lon + ')[amenity=police];nwr(around:3000,' + lat + ',' + lon + ')[highway=junction];);out tags;';
         var url = 'https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(cleanQuery);
 
         try {
             var response = await fetch(url);
+            if(!response.ok) throw new Error("API Failure");
             var data = await response.json();
             
             var stationNameEl = document.getElementById('stationName');
             var stationCallEl = document.getElementById('stationCall');
 
             if (data && data.elements && data.elements.length > 0) {
-                var validStations = data.elements.filter(function(e) { return e.tags && (e.tags.name || e.tags['name:en']); });
+                var namedElements = data.elements.filter(function(e) { 
+                    return e.tags && (e.tags.name || e.tags['name:en'] || e.tags.operator || e.tags.junction); 
+                });
                 
-                if(validStations.length > 0) {
-                    var targetStation = validStations[0].tags;
-                    var realName = targetStation['name:en'] || targetStation.name || "Local Police Station";
-                    var rawPhone = targetStation.phone || targetStation["contact:phone"] || "100";
-                    var cleanPhone = rawPhone.replace(/\s+/g, '');
+                if(namedElements.length > 0) {
+                    var bestMatch = namedElements[0].tags;
+                    var derivedName = bestMatch['name:en'] || bestMatch.name || bestMatch.junction || bestMatch.operator;
+                    
+                    if (!derivedName.toLowerCase().includes("police") && bestMatch.amenity === "police") {
+                        derivedName = derivedName + " (Police Post)";
+                    }
 
-                    stationNameEl.innerText = realName;
+                    var rawPhone = bestMatch.phone || bestMatch["contact:phone"] || "112";
+                    var cleanPhone = rawPhone.replace(/[^0-9]/g, '');
+                    if(cleanPhone.length < 3) cleanPhone = "112";
+
+                    stationNameEl.innerText = "📍 " + derivedName;
                     stationCallEl.setAttribute('href', 'tel:' + cleanPhone);
-                    stationCallEl.innerHTML = '📞 Call Station (' + rawPhone + ')';
+                    stationCallEl.innerHTML = '📞 Emergency Call: ' + rawPhone;
                 } else {
-                    fallbackStationDetails();
+                    detectGeocodingFallback(lat, lon);
                 }
             } else {
-                fallbackStationDetails();
+                detectGeocodingFallback(lat, lon);
             }
         } catch (err) {
-            fallbackStationDetails();
+            detectGeocodingFallback(lat, lon);
         }
     }
 
-    function fallbackStationDetails() {
-        document.getElementById('stationName').innerText = "Local Police Control Desk";
+    // HIGH-ACCURACY BACKUP GEOCODER (Extracts Suburb, Chowk or Area Landmark Name)
+    async function detectGeocodingFallback(lat, lon) {
+        try {
+            var response = await fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lon);
+            var data = await response.json();
+            if(data && data.address) {
+                var area = data.address.suburb || data.address.neighbourhood || data.address.road || data.address.county || "Local Sector";
+                document.getElementById('stationName').innerText = "📍 Area / Chowk: " + area;
+            } else {
+                document.getElementById('stationName').innerText = "🚨 Nearest Local Police Post";
+            }
+        } catch(e) {
+            document.getElementById('stationName').innerText = "🚨 Nearest Local Police Post";
+        }
         var callEl = document.getElementById('stationCall');
         callEl.setAttribute('href', "tel:112");
         callEl.innerHTML = "📞 Quick Dial 112";
@@ -302,15 +324,15 @@
             handleSafetyCalculation(currentLatitude, currentLongitude);
             updateNearestPoliceStation(currentLatitude, currentLongitude);
         }, function(error) {
-            document.getElementById('liveCoords').innerText = "Location Denied";
+            document.getElementById('liveCoords').innerText = "GPS Permission Required!";
             document.getElementById('gpsStatus').innerText = "❌ Offline";
             document.getElementById('gpsStatus').style.background = "#ff383822";
             document.getElementById('gpsStatus').style.color = "var(--primary-red)";
-            fallbackStationDetails();
-        }, { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 });
+            detectGeocodingFallback(currentLatitude, currentLongitude);
+        }, { enableHighAccuracy: true, maximumAge: 4000, timeout: 20000 });
     } else {
         document.getElementById('liveCoords').innerText = "GPS Not Supported";
-        fallbackStationDetails();
+        detectGeocodingFallback(0, 0);
     }
 
     renderContacts();
